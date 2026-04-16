@@ -8,6 +8,7 @@ dependencies = [
     "matplotlib>=3.10.8",
     "numpy>=2.4.4",
     "pandas>=3.0.2",
+    "ruff>=0.15.10",
 ]
 
 [dependency-groups]
@@ -15,3 +16,17 @@ dev = [
     "ipykernel>=7.2.0",
     "pip>=26.0.1",
 ]
+
+# Ruff configuration for linting and formatting
+[tool.ruff]
+line-length = 100  # same as Black
+exclude = ["tests/*"]  # exclude test files from linting
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes (undefined names, unused imports)
+    "I",   # isort (import sorting)
+    "UP",  # pyupgrade (modern python syntax)
+]
+[tool.ruff.format]
+quote-style = "double"

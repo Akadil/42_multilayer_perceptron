@@ -26,20 +26,18 @@ class DenseLayer:
         num_neurons: int, 
         activation_function: Activation, 
         weight_initializer: WeightsInitializer,
-        optimizer: Optimizer | None = None,
     ):
         self.num_neurons = num_neurons
 
         self.activation_function = activation_function
         self.weight_initializer = weight_initializer
-        self.optimizer = optimizer if optimizer is not None else GradientDescentOptimizer(0.01)
 
         self.weights: np.ndarray | None = None  # shape (input_size, num_neurons)
         self.biases: np.ndarray | None = None   # shape (num_neurons,)
 
         # cache for backpropagation
-        self._z_cache: np.ndarray | None = None      # pre-activation output
-        self._input_cache: np.ndarray | None = None  # input to the layer
+        self._z_cache: np.ndarray | None = None      # shape (batch_size, num_neurons)
+        self._input_cache: np.ndarray | None = None  # shape (batch_size, input_size)
 
         # gradients populated by backward(), consumed by optimizer
         self.grad_weights: np.ndarray | None = None  # shape (input_size, num_neurons)
@@ -47,6 +45,7 @@ class DenseLayer:
 
 
     def compile(self, input_size: int):
+
         self.weights = self.weight_initializer(input_size, self.num_neurons)
         self.biases = np.zeros(self.num_neurons)
 
