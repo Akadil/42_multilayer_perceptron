@@ -2,11 +2,16 @@ import numpy as np
 
 from activations import Activation
 from initializers import WeightsInitializer
+from mlp.optimizers import Optimizer, GradientDescentOptimizer
 
 from .utils.requires_compiled import requires_compiled
 
 class DenseLayer:
     """A fully connected layer in a neural network.
+    ===============================================================================================
+    Formula:
+        forward: output = activation_function(inputs @ weights + biases)
+        backward: grad_input = (grad_output * activation_function.backward(z)) @ weights.T
     ===============================================================================================
     
     Attributes:
@@ -21,13 +26,13 @@ class DenseLayer:
         num_neurons: int, 
         activation_function: Activation, 
         weight_initializer: WeightsInitializer,
+        optimizer: Optimizer | None = None,
     ):
         self.num_neurons = num_neurons
 
-        # The activation function and weight initializer are provided by the user and can be any 
-        # implementation of the respective base classes.
         self.activation_function = activation_function
         self.weight_initializer = weight_initializer
+        self.optimizer = optimizer if optimizer is not None else GradientDescentOptimizer(0.01)
 
         self.weights: np.ndarray | None = None  # shape (input_size, num_neurons)
         self.biases: np.ndarray | None = None   # shape (num_neurons,)
@@ -51,10 +56,8 @@ class DenseLayer:
         
         Args:
             inputs: shape(batch_size, input_size) The input data to the layer
-        
         Returns:
             np.ndarray: shape(batch_size, num_neurons) 
-
         Exceptions:
             ValueError: If the layer has not been compiled (weights and biases not initialized).
         """
@@ -68,12 +71,8 @@ class DenseLayer:
     def backward(self, grad_output: np.ndarray) -> np.ndarray:
         """Performs the backward pass through the layer.
         
-        Computes and stores gradients for weights and biases.
-        Weight update is delegated to the optimizer.
-
         Args:
             grad_output: shape (batch_size, num_neurons) — ∂L/∂output of this layer
-        
         Returns:
             np.ndarray: shape (batch_size, input_size) — ∂L/∂input, passed to previous layer
         """
