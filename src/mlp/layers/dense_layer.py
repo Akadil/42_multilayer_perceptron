@@ -1,7 +1,8 @@
 """
-    @TODO: (possibly) Add L2 regularization to the loss and gradients in backward().
-    @TODO: move the initializer logic to a separate method and call it from compile()
+@TODO: (possibly) Add L2 regularization to the loss and gradients in backward().
+@TODO: move the initializer logic to a separate method and call it from compile()
 """
+
 import numpy as np
 from activations import Activation
 from initializers import WeightsInitializer
@@ -21,14 +22,14 @@ class DenseLayer:
         num_neurons - The number of neurons in the layer.
         activation_function - The activation function to apply after the linear transformation.
         weight_initializer - The initializer to use for the weights.
-        
-        weights - The weights of the layer 
-        biases - The biases of the layer 
-        grad_weights - Gradient of the loss with respect to weights 
-        grad_biases - Gradient of the loss with respect to biases 
-        
-        _z_cache - Cache for the linear transformation output before activation 
-        _input_cache - Cache for the input to the layer 
+
+        weights - The weights of the layer
+        biases - The biases of the layer
+        grad_weights - Gradient of the loss with respect to weights
+        grad_biases - Gradient of the loss with respect to biases
+
+        _z_cache - Cache for the linear transformation output before activation
+        _input_cache - Cache for the input to the layer
     """
 
     def __init__(
@@ -52,9 +53,8 @@ class DenseLayer:
         self._z_cache: np.ndarray | None = None  # shape (batch_size, num_neurons)
         self._input_cache: np.ndarray | None = None  # shape (batch_size, input_size)
 
-
     def compile(self, input_size: int):
-        """Initializes the weights and biases of the layer based on the input size and the number 
+        """Initializes the weights and biases of the layer based on the input size and the number
         of neurons.
 
         Args:
@@ -105,7 +105,7 @@ class DenseLayer:
         # compute gradient of the loss w.r.t. inputs to pass to previous layer
         # ∂L/∂x_i = ∂L/∂z_i * ∂z_i/∂x_i
         grad_input = np.dot(grad_activation, self.weights.T)  # (batch_size, input_size)
-        
+
         return grad_input
 
     def is_compiled(self) -> bool:

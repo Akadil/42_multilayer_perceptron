@@ -92,7 +92,7 @@ class SequentialNeuralNetwork:
                         layer.weights, layer.grad_weights, layer.biases, layer.grad_biases
                     )
 
-            self.evaluate(x_train, y_train, x_val, y_val)
+            self._evaluate(x_train, y_train, x_val, y_val)
 
     @requires_training
     def predict(self, X: np.ndarray) -> np.ndarray:
@@ -110,44 +110,12 @@ class SequentialNeuralNetwork:
 
     @requires_training
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
-        """Predicts the output probabilities for the given input data.
-
-        Args:
-            X: shape (num_samples, input_size) The input data for prediction.
-        Returns:
-            np.ndarray: The predicted output probabilities of the network. shape (num_samples, num_classes).
-        """
+        """Predicts the output probabilities for the given input data."""
         return self._softmax(self._forward(self._normalize(X)))
-
-    def evaluate(
-        self, x_train: np.ndarray, y_train: np.ndarray, x_val: np.ndarray, y_val: np.ndarray
-    ) -> None:
-        """Evaluates the model on the provided dataset.
-
-        Args:
-            x_train: shape (num_samples, input_size) The training input data.
-            y_train: shape (num_samples, output_size) The training labels.
-            x_val: shape (num_samples, input_size) The validation input data.
-            y_val: shape (num_samples, output_size) The validation labels.
-        """
-        # loss and accuracy for training data
-        probs = self._forward(x_train)
-        self.history["loss"].append(self.loss_function.compute_loss(y_train, probs))
-        self.history["accuracy"].append(
-            np.mean(np.argmax(probs, axis=1) == np.argmax(y_train, axis=1))
-        )
-
-        # validation
-        probs = self._forward(x_val)
-        self.history["val_loss"].append(self.loss_function.compute_loss(y_val, probs))
-        self.history["val_accuracy"].append(
-            np.mean(np.argmax(probs, axis=1) == np.argmax(y_val, axis=1))
-        )
 
     def is_trained(self) -> bool:
         """Checks if the model has been trained"""
-        return len(self.history["loss"]) > 0
-
+        return self.mean is not None and self.std is not None and self.classes is not None
 
     def _split_data(
         self, X: np.ndarray, y: np.ndarray, split=0.1
@@ -186,6 +154,45 @@ class SequentialNeuralNetwork:
             grad_output = layer.backward(grad_output)
 
         return grad_output
+
+    def _evaluate(
+        self,
+        epoch,
+        epoch_total,
+        x_train: np.ndarray,
+        y_train: np.ndarray,
+        x_val: np.ndarray,
+        y_val: np.ndarray,
+    ) -> None:
+        """Evaluates the model on the provided dataset.
+
+        Args:
+            epoch: int The current epoch number.
+            epoch_total: int The total number of epochs for training.
+            x_train: shape (num_samples, input_size) The training input data.
+            y_train: shape (num_samples, output_size) The training labels.
+            x_val: shape (num_samples, input_size) The validation input data.
+            y_val: shape (num_samples, output_size) The validation labels.
+        """
+        # loss and accuracy for training data
+        probs = self._forward(x_train)
+        self.history["loss"].append(self.loss_function.compute_loss(y_train, probs))
+        self.history["accuracy"].append(
+            np.mean(np.argmax(probs, axis=1) == np.argmax(y_train, axis=1))
+        )
+
+        # validation
+        probs = self._forward(x_val)
+        self.history["val_loss"].append(self.loss_function.compute_loss(y_val, probs))
+        self.history["val_accuracy"].append(
+            np.mean(np.argmax(probs, axis=1) == np.argmax(y_val, axis=1))
+        )
+        # print: epoch 01/70 - loss: 0.6882 - val_loss: 0.6788
+        print(
+            f"epoch {epoch:02d}/{epoch_total:02d} - "
+            f"loss: {self.history['loss'][-1]:.4f} - "
+            f"val_loss: {self.history['val_loss'][-1]:.4f}"
+        )
 
     def _create_batches(
         self, X: np.ndarray, y: np.ndarray, batch_size: int
