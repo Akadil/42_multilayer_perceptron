@@ -1,5 +1,5 @@
 class Relu:
-    def __call__(self, x):
+    def activate(self, x):
         return x * (x > 0)
 
     def derivative(self, x):

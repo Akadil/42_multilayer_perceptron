@@ -2,8 +2,8 @@ from .. import Activation
 
 
 class Identity(Activation):
-    def forward(self, x):
+    def activate(self, x):
         return x
 
-    def backward(self, _):
+    def derivative(self, _):
         return 1
