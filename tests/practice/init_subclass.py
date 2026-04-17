@@ -19,3 +19,11 @@ Bruce = AustralianPhilosopher()
 Mistery = GermanPhilosopher()
 print(Bruce.default_name)
 print(Mistery.default_name)
+
+"""Output: 
+Called __init_subclass(<class '__main__.AustralianPhilosopher'>, Bruce)
+Set name to Hegel
+Called __init_subclass(<class '__main__.GermanPhilosopher'>, Nietzsche)
+Bruce
+Nietzsche
+"""

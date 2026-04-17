@@ -3,7 +3,7 @@ import numpy as np
 from . import Optimizer
 
 
-class GradientDescent(Optimizer):
+class GradientDescent(Optimizer, name="gradient_descent"):
     """Implements the vanilla gradient descent optimization algorithm.
 
     This optimizer updates weights and biases by moving in the direction of the negative gradient
@@ -12,6 +12,9 @@ class GradientDescent(Optimizer):
 
     def __init__(self, learning_rate: float):
         self.learning_rate = learning_rate
+
+    def __str__(self):
+        return f"Gradient Descent Optimizer (learning_rate={self.learning_rate})"
 
     def update(
         self,
