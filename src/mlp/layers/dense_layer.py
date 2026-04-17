@@ -3,7 +3,7 @@
 @TODO: move the initializer logic to a separate method and call it from compile()
 """
 import numpy as np
-from activations import Activation
+from activations import ActivationFunction
 from initializers import HeUniform, WeightsInitializer
 
 from .utils.requires_compiled import requires_compiled
@@ -34,7 +34,7 @@ class DenseLayer:
     def __init__(
         self,
         num_neurons: int,
-        activation_function: Activation,
+        activation_function: ActivationFunction,
         weight_initializer: WeightsInitializer | None = None,
     ):
         self.num_neurons = num_neurons

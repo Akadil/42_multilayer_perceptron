@@ -1,9 +1,12 @@
 import numpy as np
 
-from .. import Activation
+from .. import ActivationFunction
 
 
-class Sigmoid(Activation):
+class Sigmoid(ActivationFunction, name="sigmoid"):
+    def __str__(self):
+        return "Sigmoid Activation"
+    
     def activate(self, x):
         """Applies the sigmoid activation function. Used in the forward pass."""
         return 1 / (1 + np.exp(-x))
