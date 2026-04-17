@@ -3,4 +3,4 @@ class Relu:
         return x * (x > 0)
 
     def derivative(self, x):
-        return 1. * (x > 0)
+        return 1.0 * (x > 0)

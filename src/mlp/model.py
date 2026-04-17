@@ -30,9 +30,8 @@ class SequentialNeuralNetwork:
                 # 1. Forward pass through the network to compute outputs.
                 for layer in self.layers:
                     x_batch = layer.forward(x_batch)
-                    
-                # 2. Compute loss and initial gradient based on the output of the last layer and y_batch.                
 
+                # 2. Compute loss and initial gradient based on the output of the last layer and y_batch.
 
                 # 3. Backward pass through the network to compute gradients for all layers.
                 for layer in reversed(self.layers):
@@ -118,7 +117,7 @@ class SequentialNeuralNetwork:
         """
         if batch_size <= 0:
             raise ValueError("batch_size must be a positive integer.")
-        
+
         for i in range(0, len(X), batch_size):
             X_batch = X[i : i + batch_size]
             y_batch = y[i : i + batch_size]

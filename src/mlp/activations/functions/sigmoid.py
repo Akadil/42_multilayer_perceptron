@@ -1,5 +1,7 @@
 import numpy as np
+
 from .. import Activation
+
 
 class Sigmoid(Activation):
     def forward(self, x):
@@ -10,4 +12,3 @@ class Sigmoid(Activation):
         """Computes the derivative of the sigmoid function. Used in the backward pass."""
         s = self.forward(x)
         return s * (1 - s)
-    
