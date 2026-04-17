@@ -2,10 +2,9 @@
 @TODO: (possibly) Add L2 regularization to the loss and gradients in backward().
 @TODO: move the initializer logic to a separate method and call it from compile()
 """
-
 import numpy as np
 from activations import Activation
-from initializers import WeightsInitializer
+from initializers import HeUniform, WeightsInitializer
 
 from .utils.requires_compiled import requires_compiled
 
@@ -36,12 +35,12 @@ class DenseLayer:
         self,
         num_neurons: int,
         activation_function: Activation,
-        weight_initializer: WeightsInitializer,
+        weight_initializer: WeightsInitializer | None = None,
     ):
         self.num_neurons = num_neurons
         self.activation_function = activation_function
 
-        self.weight_initializer = weight_initializer
+        self.weight_initializer = weight_initializer or HeUniform()
 
         # weights and biases initialized in compile()
         self.weights: np.ndarray | None = None  # shape (input_size, num_neurons)
