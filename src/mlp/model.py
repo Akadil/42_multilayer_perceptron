@@ -3,79 +3,151 @@ from collections.abc import Generator
 import numpy as np
 
 from mlp.layers.dense_layer import DenseLayer
+from mlp.losses.crossentropy import CrossEntropyWithSoftmax
 from mlp.optimizers import GradientDescentOptimizer, Optimizer
+
+from .utils import requires_training
 
 SEED = 42
 
 
 class SequentialNeuralNetwork:
+    """A simple feedforward neural network composed of a sequence of layers.
+    ===============================================================================================
+    Formula:
+
+    Important:
+        - the network assumes Loss function is CrossEntropyLoss and the output layer uses Softmax
+            activation. This is a common setup for classification tasks.
+
+    Attributes:
+    - layers: A list of DenseLayer instances that make up the network.
+    - optimizer: An instance of an Optimizer used to update the weights during training.
+    - loss_function: the cross-entropy loss function with softmax activation.
+    ===============================================================================================
+    """
+
     def __init__(self, layers: list[DenseLayer]):
+        if len(layers) == 0:
+            raise ValueError("The network must have at least one layer.")
+        if layers[-1].activation_function != "identity":
+            raise ValueError(
+                "The output layer must use the identity activation function when using "
+                "CrossEntropyWithSoftmax loss."
+            )
+
         self.layers = layers
         self.optimizer: Optimizer | None = None  # set during compile()
-        self.loss_function: LossFunction | None = None  # set during compile()
+        self.loss_function = CrossEntropyWithSoftmax  # CrossEntropyLossWithSofmax
+        self.mean: np.ndarray | None = None  # mean of the training data for normalization
+        self.std: np.ndarray | None = None  # std of the training data for normalization
+        self.history = {
+            "loss": [],
+            "accuracy": [],
+            "val_loss": [],
+            "val_accuracy": [],
+        }  # to track training and validation loss over epochs
+        self.classes: np.ndarray | None = None
 
-    def compile(self, input_size: int, optimizer: Optimizer | None = None, loss_function=None):
+    def compile(self, input_size: int, optimizer: Optimizer | None = None):
         self.optimizer = optimizer if optimizer is not None else GradientDescentOptimizer(0.01)
-        self.loss_function = loss_function
 
         for layer in self.layers:
             layer.compile(input_size)
             input_size = layer.num_neurons
 
     def fit(self, X: np.ndarray, y: np.ndarray, epochs=10, batch_size=32, validation_split=0.1):
+        """Trains the neural network on the provided dataset.
+
+        Args:
+            X (np.ndarray): _description_
+            y (np.ndarray): _description_
+            epochs (int, optional): _description_. Defaults to 10.
+            batch_size (int, optional): _description_. Defaults to 32.
+            validation_split (float, optional): _description_. Defaults to 0.1.
+        """
+        self.classes = np.unique(y)
+        y = np.searchsorted(self.classes, y)  # Convert labels to integer indices
         x_train, y_train, x_val, y_val = self._split_data(X, y, validation_split)
 
-        for epoch in range(epochs):
+        self.mean = np.mean(x_train, axis=0)
+        self.std = np.std(x_train, axis=0)
+
+        # Normalize the input data (zero mean and unit variance) for better training performance.
+        x_train = self._normalize(x_train)
+        x_val = self._normalize(x_val)
+        y_train = np.eye(len(self.classes))[y_train]
+        y_val = np.eye(len(self.classes))[y_val]
+
+        for _ in range(epochs):
             for x_batch, y_batch in self._create_batches(x_train, y_train, batch_size):
-                # 1. Forward pass through the network to compute outputs.
+                # calculate the learning steps (parameters gradients of the loss)
+                probs = self._forward(x_batch)
+                grad = self.loss_function.compute_gradient(y_batch, probs)
+                self._backward(grad)
+
+                # update the parameters of the network
                 for layer in self.layers:
-                    x_batch = layer.forward(x_batch)
+                    self.optimizer.update(
+                        layer.weights, layer.grad_weights, layer.biases, layer.grad_biases
+                    )
 
-                # 2. Compute loss and initial gradient based on the output of the last layer and y_batch.
+            self.evaluate(x_train, y_train, x_val, y_val)
 
-                # 3. Backward pass through the network to compute gradients for all layers.
-                for layer in reversed(self.layers):
-                    grad_output = None  # This should be set to the appropriate value based on the loss gradient and next layer's gradients.
-                    grad_input = layer.backward(grad_output)
-                    grad_output = grad_input  # For the next layer in the backward pass
-
-                # 4. Use the optimizer to update weights and biases of each layer based on computed gradients.
-                # 5. Optionally, evaluate performance on the validation set at the end of each epoch.
-
-                pass
-
-        # For simplicity, this method is a stub. In a full implementation, it would:
-        # 1. Split the data into training and validation sets based on validation_split.
-        # 2. Loop over epochs and batches, performing forward and backward passes.
-
+    @requires_training
     def predict(self, X: np.ndarray) -> np.ndarray:
-        """Performs a forward pass through the network to generate predictions.
+        """Predicts the output (class labels) for the given input data.
 
         Args:
             X: shape (num_samples, input_size) The input data for prediction.
         Returns:
-            np.ndarray: shape (num_samples, output_size) The predicted outputs of the network.
+            np.ndarray: The predicted outputs of the network. shape (num_samples,).
+            example: ['class1', 'class2', 'class1', ...]
         """
-        # output = X
-        # for layer in self.layers:
-        #     output = layer.forward(output)
-        # return output
-        pass
+        probs = self._forward(self._normalize(X))
 
-    def evaluate(self, X: np.ndarray, y: np.ndarray) -> float:
-        """Evaluates the model's performance on the given dataset.
+        return self.classes[np.argmax(probs, axis=1)]
+
+    @requires_training
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        """Predicts the output probabilities for the given input data.
 
         Args:
-            X: shape (num_samples, input_size) The input data for evaluation.
-            y: shape (num_samples, output_size) The true labels for the input data.
+            X: shape (num_samples, input_size) The input data for prediction.
         Returns:
-            float: The computed loss or accuracy of the model on the given dataset.
+            np.ndarray: The predicted output probabilities of the network. shape (num_samples, num_classes).
         """
-        # For simplicity, this method is a stub. In a full implementation, it would:
-        # 1. Use predict() to get the model's predictions on X.
-        # 2. Compute and return a performance metric (e.g., loss or accuracy) comparing predictions
-        # to y.
-        pass
+        return self._softmax(self._forward(self._normalize(X)))
+
+    def evaluate(
+        self, x_train: np.ndarray, y_train: np.ndarray, x_val: np.ndarray, y_val: np.ndarray
+    ) -> None:
+        """Evaluates the model on the provided dataset.
+
+        Args:
+            x_train: shape (num_samples, input_size) The training input data.
+            y_train: shape (num_samples, output_size) The training labels.
+            x_val: shape (num_samples, input_size) The validation input data.
+            y_val: shape (num_samples, output_size) The validation labels.
+        """
+        # loss and accuracy for training data
+        probs = self._forward(x_train)
+        self.history["loss"].append(self.loss_function.compute_loss(y_train, probs))
+        self.history["accuracy"].append(
+            np.mean(np.argmax(probs, axis=1) == np.argmax(y_train, axis=1))
+        )
+
+        # validation
+        probs = self._forward(x_val)
+        self.history["val_loss"].append(self.loss_function.compute_loss(y_val, probs))
+        self.history["val_accuracy"].append(
+            np.mean(np.argmax(probs, axis=1) == np.argmax(y_val, axis=1))
+        )
+
+    def is_trained(self) -> bool:
+        """Checks if the model has been trained"""
+        return len(self.history["loss"]) > 0
+
 
     def _split_data(
         self, X: np.ndarray, y: np.ndarray, split=0.1
@@ -101,6 +173,20 @@ class SequentialNeuralNetwork:
 
         return X[train_idx], y[train_idx], X[val_idx], y[val_idx]
 
+    def _forward(self, X: np.ndarray) -> np.ndarray:
+        """Performs a forward pass through the network to compute the output."""
+        for layer in self.layers:
+            X = layer.forward(X)
+
+        return X
+
+    def _backward(self, grad_output: np.ndarray) -> np.ndarray:
+        """Performs a backward pass through the network to compute gradients."""
+        for layer in reversed(self.layers):
+            grad_output = layer.backward(grad_output)
+
+        return grad_output
+
     def _create_batches(
         self, X: np.ndarray, y: np.ndarray, batch_size: int
     ) -> Generator[tuple[np.ndarray, np.ndarray]]:
@@ -123,3 +209,24 @@ class SequentialNeuralNetwork:
             y_batch = y[i : i + batch_size]
 
             yield (X_batch, y_batch)
+
+    def _normalize(self, input_data: np.ndarray) -> np.ndarray:
+        """Normalizes the data with the training data statistics."""
+        if self.mean is None or self.std is None:
+            raise ValueError("Mean and standard deviation must be computed from training data")
+
+        std = np.where(self.std == 0, 1, self.std)  # Prevent division by zero
+        return (input_data - self.mean) / std
+
+    def _softmax(self, z: np.ndarray) -> np.ndarray:
+        """Applies the softmax activation function to the input.
+
+        Args:
+            z: shape (batch_size, num_classes) The input to the softmax function (logits).
+        Returns:
+            np.ndarray: shape (batch_size, num_classes) The output probabilities after applying
+            softmax.
+        """
+        exp_z = np.exp(z - np.max(z, axis=1, keepdims=True))  # for numerical stability
+
+        return exp_z / np.sum(exp_z, axis=1, keepdims=True)
