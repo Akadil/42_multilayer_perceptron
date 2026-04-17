@@ -60,7 +60,7 @@ class DenseLayer:
         Args:
             input_size (int): number of features from the previous layer.
         """
-        self.weights = self.weight_initializer(input_size, self.num_neurons)
+        self.weights = self.weight_initializer.initialize(input_size, self.num_neurons)
         self.biases = np.zeros(self.num_neurons)
 
     @requires_compiled

@@ -38,7 +38,7 @@ class SequentialNeuralNetwork:
 
         self.layers = layers
         self.optimizer: Optimizer | None = None  # set during compile()
-        self.loss_function = CrossEntropyWithSoftmax  # CrossEntropyLossWithSofmax
+        self.loss_function = CrossEntropyWithSoftmax()  # CrossEntropyLossWithSofmax
         self.mean: np.ndarray | None = None  # mean of the training data for normalization
         self.std: np.ndarray | None = None  # std of the training data for normalization
         self.history = {
@@ -79,7 +79,7 @@ class SequentialNeuralNetwork:
         y_train = np.eye(len(self.classes))[y_train]
         y_val = np.eye(len(self.classes))[y_val]
 
-        for _ in range(epochs):
+        for epoch in range(epochs):
             for x_batch, y_batch in self._create_batches(x_train, y_train, batch_size):
                 # calculate the learning steps (parameters gradients of the loss)
                 probs = self._forward(x_batch)
@@ -92,7 +92,7 @@ class SequentialNeuralNetwork:
                         layer.weights, layer.grad_weights, layer.biases, layer.grad_biases
                     )
 
-            self._evaluate(x_train, y_train, x_val, y_val)
+            self._evaluate(epoch, epochs, x_train, y_train, x_val, y_val)
 
     @requires_training
     def predict(self, X: np.ndarray) -> np.ndarray:

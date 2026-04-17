@@ -1,10 +1,9 @@
 from abc import ABC, abstractmethod
 
+import numpy as np
+
 
 class WeightsInitializer(ABC):
-    def __call__(self, *args, **kwds):
-        return self.initialize(*args, **kwds)
-
     @abstractmethod
-    def initialize(self, shape):
+    def initialize(self, input, output) -> np.ndarray:
         pass

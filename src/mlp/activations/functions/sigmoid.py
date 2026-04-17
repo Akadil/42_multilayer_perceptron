@@ -10,5 +10,5 @@ class Sigmoid(Activation):
 
     def derivative(self, x):
         """Computes the derivative of the sigmoid function. Used in the backward pass."""
-        s = self.forward(x)
+        s = self.activate(x)
         return s * (1 - s)
