@@ -41,13 +41,15 @@ class CrossEntropyWithSoftmax:
             np.ndarray: Gradient of the loss with respect to z_pred. shape (batch_size, num_classes)
         """
         # Apply softmax to get predicted probabilities
-        y_pred = (
-            self._output_cache
-            if self._output_cache is not None
-            else self.softmax_activation(z_pred)
-        )
+        # y_pred = (
+        #     self._output_cache
+        #     if self._output_cache is not None
+        #     else self.softmax_activation(z_pred)
+        # )
+        y_pred = self.softmax_activation(z_pred)
 
         # Gradient of cross-entropy loss with softmax output is simply (y_pred - y_true)
+        # print("y_pred:", y_pred, "y_true:", y_true)
         grad = (y_pred - y_true) / y_true.shape[0]  # Normalize by batch size
         return grad
 
