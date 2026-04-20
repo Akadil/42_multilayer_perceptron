@@ -3,6 +3,7 @@ from collections.abc import Generator
 import numpy as np
 
 from .activations.base import ActivationFunction
+from .initializers import NoOpInitializer
 from .layers.dense_layer import DenseLayer
 from .losses.crossentropy import CrossEntropyWithSoftmax
 from .optimizers import GradientDescentOptimizer, Optimizer
@@ -49,38 +50,40 @@ class SequentialNeuralNetwork:
         }  # to track training and validation loss over epochs
         self.classes: np.ndarray | None = None
 
-    # load the parameters of the model from a file
     @classmethod
-    def load(cls, file_path: str) -> "SequentialNeuralNetwork":
-        """Loads the model parameters from a file and creates a SequentialNeuralNetwork instance.
-
+    def load(cls, path: str) -> "SequentialNeuralNetwork":
+        """Loads a trained model from disk.
+    
         Args:
-            file_path (str): The path to the file containing the model parameters.
+            path: File path to the saved model (e.g. 'saved_model.npy').
         Returns:
-            SequentialNeuralNetwork: An instance of SequentialNeuralNetwork with the loaded
-            parameters.
+            SequentialNeuralNetwork: The reconstructed model ready for inference.
         """
-        data = np.load(file_path, allow_pickle=True)
-        layers_data = data["layers"]
-        mean = data["mean"]
-        std = data["std"]
-        classes = data["classes"]
-
+        data = np.load(path, allow_pickle=True).item()
+    
+        num_layers = data["num_layers"]
         layers = []
-        for weights, biases, activation_name in layers_data:
-            activation_function = ActivationFunction.from_str(activation_name)
+    
+        for i in range(num_layers):
+            activation_name = data[f"layer_{i}_activation"]
+            activation_cls = ActivationFunction.from_str(activation_name)
+            num_neurons = int(data[f"layer_{i}_num_neurons"])
+    
             layer = DenseLayer(
-                num_neurons=weights.shape[1], activation_function=activation_function
+                num_neurons=num_neurons,
+                activation_function=activation_cls(),
+                weight_initializer=NoOpInitializer(),  # weights restored below
             )
-            layer.weights = weights
-            layer.biases = biases
+            # restore weights directly — bypasses compile()
+            layer.weights = data[f"layer_{i}_weights"]
+            layer.biases = data[f"layer_{i}_biases"]
             layers.append(layer)
-
+    
         model = cls(layers)
-        model.mean = mean
-        model.std = std
-        model.classes = classes
-
+        model.mean = data["mean"]
+        model.std = data["std"]
+        model.classes = data["classes"]
+    
         return model
 
     def compile(self, input_size: int, optimizer: Optimizer | None = None):
@@ -147,18 +150,30 @@ class SequentialNeuralNetwork:
         """Predicts the output probabilities for the given input data."""
         return self._softmax(self._forward(self._normalize(X)))
 
-    def save(self, file_path: str) -> None:
-        """Saves the model parameters to a file."""
-        np.savez(
-            file_path,
-            layers=[
-                (layer.weights, layer.biases, layer.activation_function.name)
-                for layer in self.layers
-            ],
-            mean=self.mean,
-            std=self.std,
-            classes=self.classes,
-        )
+    def save(self, path: str) -> None:
+        """Serializes the trained model to disk.
+    
+        Args:
+            path: File path to save the model (e.g. 'saved_model.npy').
+        """
+        if not self.is_trained():
+            raise RuntimeError("Cannot save an untrained model.")
+    
+        data = {
+            "mean": self.mean,
+            "std": self.std,
+            "classes": self.classes,
+            "num_layers": len(self.layers),
+        }
+    
+        for i, layer in enumerate(self.layers):
+            data[f"layer_{i}_weights"] = layer.weights
+            data[f"layer_{i}_biases"] = layer.biases
+            data[f"layer_{i}_activation"] = type(layer.activation_function).__name__
+            data[f"layer_{i}_num_neurons"] = layer.num_neurons
+    
+        np.save(path, data)
+ 
 
     def is_trained(self) -> bool:
         """Checks if the model has been trained"""
