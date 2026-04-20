@@ -2,9 +2,10 @@
 @TODO: (possibly) Add L2 regularization to the loss and gradients in backward().
 @TODO: move the initializer logic to a separate method and call it from compile()
 """
+
 import numpy as np
-from activations import ActivationFunction
-from initializers import HeUniform, WeightsInitializer
+from ..activations import ActivationFunction
+from ..initializers import HeUniform, WeightsInitializer
 
 from .utils.requires_compiled import requires_compiled
 

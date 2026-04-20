@@ -2,10 +2,10 @@ from collections.abc import Generator
 
 import numpy as np
 
-from mlp.layers.dense_layer import DenseLayer
-from mlp.losses.crossentropy import CrossEntropyWithSoftmax
-from mlp.optimizers import GradientDescentOptimizer, Optimizer
-
+from .activations.base import ActivationFunction
+from .layers.dense_layer import DenseLayer
+from .losses.crossentropy import CrossEntropyWithSoftmax
+from .optimizers import GradientDescentOptimizer, Optimizer
 from .utils import requires_training
 
 SEED = 42
@@ -48,6 +48,40 @@ class SequentialNeuralNetwork:
             "val_accuracy": [],
         }  # to track training and validation loss over epochs
         self.classes: np.ndarray | None = None
+
+    # load the parameters of the model from a file
+    @classmethod
+    def load(cls, file_path: str) -> "SequentialNeuralNetwork":
+        """Loads the model parameters from a file and creates a SequentialNeuralNetwork instance.
+
+        Args:
+            file_path (str): The path to the file containing the model parameters.
+        Returns:
+            SequentialNeuralNetwork: An instance of SequentialNeuralNetwork with the loaded
+            parameters.
+        """
+        data = np.load(file_path, allow_pickle=True)
+        layers_data = data["layers"]
+        mean = data["mean"]
+        std = data["std"]
+        classes = data["classes"]
+
+        layers = []
+        for weights, biases, activation_name in layers_data:
+            activation_function = ActivationFunction.from_str(activation_name)
+            layer = DenseLayer(
+                num_neurons=weights.shape[1], activation_function=activation_function
+            )
+            layer.weights = weights
+            layer.biases = biases
+            layers.append(layer)
+
+        model = cls(layers)
+        model.mean = mean
+        model.std = std
+        model.classes = classes
+
+        return model
 
     def compile(self, input_size: int, optimizer: Optimizer | None = None):
         self.optimizer = optimizer if optimizer is not None else GradientDescentOptimizer(0.01)
@@ -112,6 +146,19 @@ class SequentialNeuralNetwork:
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
         """Predicts the output probabilities for the given input data."""
         return self._softmax(self._forward(self._normalize(X)))
+
+    def save(self, file_path: str) -> None:
+        """Saves the model parameters to a file."""
+        np.savez(
+            file_path,
+            layers=[
+                (layer.weights, layer.biases, layer.activation_function.name)
+                for layer in self.layers
+            ],
+            mean=self.mean,
+            std=self.std,
+            classes=self.classes,
+        )
 
     def is_trained(self) -> bool:
         """Checks if the model has been trained"""

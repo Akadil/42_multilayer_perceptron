@@ -1,7 +1,7 @@
-from .. import Activation
+from .. import ActivationFunction
 
 
-class Identity(Activation, name="identity"):
+class Identity(ActivationFunction, name="identity"):
     def __str__(self):
         return "Identity Activation"
 

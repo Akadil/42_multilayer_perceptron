@@ -1,13 +1,13 @@
 from .base import ActivationFunction
-from .functions.relu import ReLUActivation
-from .functions.sigmoid import SigmoidActivation
-from .functions.tanh import TanhActivation
+from .functions.identity import Identity
+from .functions.relu import Relu
+from .functions.sigmoid import Sigmoid
+from .functions.tanh import Tanh
 
-# from .functions.softmax import SoftmaxActivation
 __all__ = [
     "ActivationFunction",
-    "ReLUActivation",
-    "SigmoidActivation",
-    # "SoftmaxActivation",
-    "TanhActivation",
+    "Identity",
+    "Relu",
+    "Sigmoid",
+    "Tanh",
 ]
