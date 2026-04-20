@@ -5,6 +5,9 @@ class Relu(ActivationFunction, name="relu"):
     def __str__(self):
         return "ReLU Activation"
 
+    def __repr__(self) -> str:
+        return "Relu()"
+
     def activate(self, x):
         return x * (x > 0)
 

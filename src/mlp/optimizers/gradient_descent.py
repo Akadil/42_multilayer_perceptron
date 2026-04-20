@@ -16,6 +16,9 @@ class GradientDescent(Optimizer, name="gradient_descent"):
     def __str__(self):
         return f"Gradient Descent Optimizer (learning_rate={self.learning_rate})"
 
+    def __repr__(self) -> str:
+        return f"GradientDescent(learning_rate={self.learning_rate!r})"
+
     def update(
         self,
         weights: np.ndarray,

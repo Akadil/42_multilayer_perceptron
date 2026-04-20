@@ -5,6 +5,12 @@ class CrossEntropyWithSoftmax:
     def __init__(self):
         self._output_cache: np.ndarray | None = None  # Cache for the output of the softmax function
 
+    def __repr__(self) -> str:
+        cache = "None"
+        if self._output_cache is not None:
+            cache = np.array2string(self._output_cache, threshold=np.inf, separator=", ")
+        return f"CrossEntropyWithSoftmax(_output_cache={cache})"
+
     def compute_loss(self, y_true: np.ndarray, z_pred: np.ndarray) -> float:
         """Computes the categorical cross-entropy loss.
 

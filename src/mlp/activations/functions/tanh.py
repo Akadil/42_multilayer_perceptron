@@ -7,6 +7,9 @@ class Tanh(ActivationFunction, name="tanh"):
     def __str__(self):
         return "Tanh Activation"
 
+    def __repr__(self) -> str:
+        return "Tanh()"
+
     def activate(self, x: np.ndarray) -> np.ndarray:
         """Applies the Tanh activation function element-wise."""
         return np.tanh(x)

@@ -53,6 +53,32 @@ class DenseLayer:
         self._z_cache: np.ndarray | None = None  # shape (batch_size, num_neurons)
         self._input_cache: np.ndarray | None = None  # shape (batch_size, input_size)
 
+    def __str__(self):
+        return (f"DenseLayer(num_neurons={self.num_neurons}, "
+                f"activation_function={self.activation_function})")
+
+    def __repr__(self):
+        """Full state dump of the layer for debugging."""
+        return (
+            "DenseLayer(\n"
+            f"  num_neurons={self.num_neurons},\n"
+            f"  activation_function={self.activation_function!r},\n"
+            f"  weight_initializer={self.weight_initializer!r},\n"
+            f"  weights={self._format_array(self.weights)},\n"
+            f"  biases={self._format_array(self.biases)},\n"
+            f"  grad_weights={self._format_array(self.grad_weights)},\n"
+            f"  grad_biases={self._format_array(self.grad_biases)},\n"
+            f"  _z_cache={self._format_array(self._z_cache)},\n"
+            f"  _input_cache={self._format_array(self._input_cache)}\n"
+            ")"
+        )
+
+    @staticmethod
+    def _format_array(value: np.ndarray | None) -> str:
+        if value is None:
+            return "None"
+        return np.array2string(value, threshold=np.inf, separator=", ")
+
     def compile(self, input_size: int):
         """Initializes the weights and biases of the layer based on the input size and the number
         of neurons.

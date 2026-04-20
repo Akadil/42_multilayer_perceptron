@@ -31,11 +31,6 @@ class SequentialNeuralNetwork:
     def __init__(self, layers: list[DenseLayer]):
         if len(layers) == 0:
             raise ValueError("The network must have at least one layer.")
-        if layers[-1].activation_function != "identity":
-            raise ValueError(
-                "The output layer must use the identity activation function when using "
-                "CrossEntropyWithSoftmax loss."
-            )
 
         self.layers = layers
         self.optimizer: Optimizer | None = None  # set during compile()
@@ -49,6 +44,26 @@ class SequentialNeuralNetwork:
             "val_accuracy": [],
         }  # to track training and validation loss over epochs
         self.classes: np.ndarray | None = None
+
+    def __repr__(self) -> str:
+        layers_repr = "[\n" + ",\n".join(repr(layer) for layer in self.layers) + "\n]"
+        return (
+            "SequentialNeuralNetwork(\n"
+            f"  layers={layers_repr},\n"
+            f"  optimizer={self.optimizer!r},\n"
+            f"  loss_function={self.loss_function!r},\n"
+            f"  mean={self._format_array(self.mean)},\n"
+            f"  std={self._format_array(self.std)},\n"
+            f"  classes={self._format_array(self.classes)},\n"
+            f"  history={self.history!r}\n"
+            ")"
+        )
+
+    @staticmethod
+    def _format_array(value: np.ndarray | None) -> str:
+        if value is None:
+            return "None"
+        return np.array2string(value, threshold=np.inf, separator=", ")
 
     @classmethod
     def load(cls, path: str) -> "SequentialNeuralNetwork":
