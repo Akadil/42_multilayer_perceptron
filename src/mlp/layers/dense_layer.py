@@ -4,9 +4,9 @@
 """
 
 import numpy as np
+
 from ..activations import ActivationFunction
 from ..initializers import HeUniform, WeightsInitializer
-
 from .utils.requires_compiled import requires_compiled
 
 
@@ -54,8 +54,10 @@ class DenseLayer:
         self._input_cache: np.ndarray | None = None  # shape (batch_size, input_size)
 
     def __str__(self):
-        return (f"DenseLayer(num_neurons={self.num_neurons}, "
-                f"activation_function={self.activation_function})")
+        return (
+            f"DenseLayer(num_neurons={self.num_neurons}, "
+            f"activation_function={self.activation_function})"
+        )
 
     def __repr__(self):
         """Full state dump of the layer for debugging."""

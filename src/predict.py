@@ -5,7 +5,7 @@ import argparse
 import numpy as np
 import pandas as pd
 
-from mlp.network import SequentialNeuralNetwork
+from mlp.model import SequentialNeuralNetwork
 
 
 def binary_cross_entropy(y_true: np.ndarray, y_pred_proba: np.ndarray) -> float:
@@ -30,10 +30,11 @@ def main():
     args = parser.parse_args()
 
     model = SequentialNeuralNetwork.load(args.model)
+    print(f"Loaded model: {model}")
 
     df = pd.read_csv(args.dataset)
-    X = df.iloc[:, :-1].values.astype(np.float64)
-    y_true = df.iloc[:, -1].values
+    y_true = df.diagnosis.to_numpy()
+    X = df.drop(columns=["id", "diagnosis"]).astype(float).to_numpy()
 
     predictions = model.predict(X)
     proba = model.predict_proba(X)

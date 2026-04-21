@@ -7,6 +7,11 @@ class ActivationFunction(ABC):
     def __init_subclass__(cls, name: str, **kwargs):
         super().__init_subclass__(**kwargs)
         cls._registry[name] = cls
+        cls._name = name  # store the registry key on the class
+
+    @property
+    def name(self) -> str:
+        return self._name
 
     @classmethod
     def from_str(cls, name: str) -> "ActivationFunction":

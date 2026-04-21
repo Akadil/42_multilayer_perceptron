@@ -45,6 +45,9 @@ class SequentialNeuralNetwork:
         }  # to track training and validation loss over epochs
         self.classes: np.ndarray | None = None
 
+    def __str__(self):
+        return f"SequentialNeuralNetwork(layers={self.layers}, optimizer={self.optimizer})"
+
     def __repr__(self) -> str:
         layers_repr = "[\n" + ",\n".join(repr(layer) for layer in self.layers) + "\n]"
         return (
@@ -68,37 +71,37 @@ class SequentialNeuralNetwork:
     @classmethod
     def load(cls, path: str) -> "SequentialNeuralNetwork":
         """Loads a trained model from disk.
-    
+
         Args:
             path: File path to the saved model (e.g. 'saved_model.npy').
         Returns:
             SequentialNeuralNetwork: The reconstructed model ready for inference.
         """
         data = np.load(path, allow_pickle=True).item()
-    
+
         num_layers = data["num_layers"]
         layers = []
-    
+
         for i in range(num_layers):
             activation_name = data[f"layer_{i}_activation"]
-            activation_cls = ActivationFunction.from_str(activation_name)
+            activation_function = ActivationFunction.from_str(activation_name)
             num_neurons = int(data[f"layer_{i}_num_neurons"])
-    
+
             layer = DenseLayer(
                 num_neurons=num_neurons,
-                activation_function=activation_cls(),
+                activation_function=activation_function,
                 weight_initializer=NoOpInitializer(),  # weights restored below
             )
             # restore weights directly — bypasses compile()
             layer.weights = data[f"layer_{i}_weights"]
             layer.biases = data[f"layer_{i}_biases"]
             layers.append(layer)
-    
+
         model = cls(layers)
         model.mean = data["mean"]
         model.std = data["std"]
         model.classes = data["classes"]
-    
+
         return model
 
     def compile(self, input_size: int, optimizer: Optimizer | None = None):
@@ -167,35 +170,34 @@ class SequentialNeuralNetwork:
 
     def save(self, path: str) -> None:
         """Serializes the trained model to disk.
-    
+
         Args:
             path: File path to save the model (e.g. 'saved_model.npy').
         """
         if not self.is_trained():
             raise RuntimeError("Cannot save an untrained model.")
-    
+
         data = {
             "mean": self.mean,
             "std": self.std,
             "classes": self.classes,
             "num_layers": len(self.layers),
         }
-    
+
         for i, layer in enumerate(self.layers):
             data[f"layer_{i}_weights"] = layer.weights
             data[f"layer_{i}_biases"] = layer.biases
-            data[f"layer_{i}_activation"] = type(layer.activation_function).__name__
+            data[f"layer_{i}_activation"] = layer.activation_function.name
             data[f"layer_{i}_num_neurons"] = layer.num_neurons
-    
+
         np.save(path, data)
- 
 
     def is_trained(self) -> bool:
         """Checks if the model has been trained"""
         return self.mean is not None and self.std is not None and self.classes is not None
 
     def _split_data(
-        self, X: np.ndarray, y: np.ndarray, split=0.1
+        self, X: np.ndarray, y: np.ndarray, split: float = 0.1
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Splits the dataset into training and validation sets.
 

@@ -1,45 +1,28 @@
 """Trains a multilayer perceptron on a dataset and saves the model to disk."""
 
-import argparse
-
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 
+from mlp.activations import Identity, Sigmoid
 from mlp.layers.dense_layer import DenseLayer
-from mlp.losses.crossentropy import CrossEntropyWithSoftmax
-from mlp.network import SequentialNeuralNetwork
+from mlp.model import SequentialNeuralNetwork
 from mlp.optimizers import GradientDescentOptimizer
-from mlp.activations import Sigmoid, Softmax
-from mlp.initializers import HeUniform, RandomNormal
+from utils import parse_arguments
 
 
-ACTIVATION_REGISTRY = {
-    "sigmoid": Sigmoid,
-    "softmax": Softmax,
-}
-
-INITIALIZER_REGISTRY = {
-    "heUniform": HeUniform,
-    "randomNormal": RandomNormal,
-}
-
-
-def build_network(layer_sizes: list[int], input_size: int, output_size: int) -> list[DenseLayer]:
-    layers = []
-    sizes = [input_size] + layer_sizes + [output_size]
-
-    for i in range(len(sizes) - 1):
-        is_output = i == len(sizes) - 2
-        activation = Softmax() if is_output else Sigmoid()
-        initializer = HeUniform()
-        layer = DenseLayer(
-            num_neurons=sizes[i + 1],
-            activation_function=activation,
-            weight_initializer=initializer,
+def build_network(hidden_layers: list[int]) -> list[DenseLayer]:
+    layers = [
+        DenseLayer(
+            num_neurons=layer_size,
+            activation_function=Sigmoid(),
         )
-        layers.append(layer)
-
+        for layer_size in hidden_layers
+    ] + [
+        DenseLayer(
+            num_neurons=2,
+            activation_function=Identity(),  # Using identity for output layer for simplicity
+        )
+    ]
     return layers
 
 
@@ -65,33 +48,27 @@ def plot_learning_curves(history: dict) -> None:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Train a multilayer perceptron.")
-    parser.add_argument("--dataset", required=True, help="Path to the training CSV file.")
-    parser.add_argument("--layer", nargs="+", type=int, default=[24, 24], help="Hidden layer sizes.")
-    parser.add_argument("--epochs", type=int, default=70)
-    parser.add_argument("--batch_size", type=int, default=8)
-    parser.add_argument("--learning_rate", type=float, default=0.0314)
-    parser.add_argument("--validation_split", type=float, default=0.2)
-    parser.add_argument("--output", default="saved_model.npy", help="Path to save the model.")
-    args = parser.parse_args()
+    args = parse_arguments()
 
+    # Load dataset
     df = pd.read_csv(args.dataset)
-    # assumes last column is the target, rest are features
-    X = df.iloc[:, :-1].values.astype(np.float64)
-    y = df.iloc[:, -1].values
 
-    input_size = X.shape[1]
-    output_size = len(np.unique(y))
+    y = df.diagnosis.to_numpy()
+    X = df.drop(columns=["id", "diagnosis"]).astype(float).to_numpy()
 
-    layers = build_network(args.layer, input_size, output_size)
-    model = SequentialNeuralNetwork(layers)
+    # Build the model
+    model = SequentialNeuralNetwork(build_network(args.layer))
+
     model.compile(
-        input_size=input_size,
+        input_size=X.shape[1],
         optimizer=GradientDescentOptimizer(args.learning_rate),
     )
 
+    # Train the model
     print(f"x_train shape : {X.shape}")
-    model.fit(X, y, epochs=args.epochs, batch_size=args.batch_size, validation_split=args.validation_split)
+    model.fit(
+        X, y, epochs=args.epochs, batch_size=args.batch_size, validation_split=args.validation_split
+    )
 
     model.save(args.output)
     print(f"> saving model '{args.output}' to disk...")

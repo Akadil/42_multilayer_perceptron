@@ -33,7 +33,9 @@ def split_dataset(dataset_path: str, validation_split: float, output_dir: str) -
 def main():
     parser = argparse.ArgumentParser(description="Split dataset into training and validation sets.")
     parser.add_argument("--dataset", required=True, help="Path to the dataset CSV file.")
-    parser.add_argument("--validation_split", type=float, default=0.2, help="Validation split ratio.")
+    parser.add_argument(
+        "--validation_split", type=float, default=0.2, help="Validation split ratio."
+    )
     parser.add_argument("--output_dir", default=".", help="Directory to save the split datasets.")
     args = parser.parse_args()
 
