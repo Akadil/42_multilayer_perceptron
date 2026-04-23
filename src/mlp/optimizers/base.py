@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+import numpy as np
+
 
 class Optimizer(ABC):
     _registry: dict[str, type["Optimizer"]] = {}
@@ -9,12 +11,18 @@ class Optimizer(ABC):
         cls._registry[name] = cls
 
     @classmethod
-    def from_str(cls, name: str) -> "Optimizer":
+    def from_str(cls, name: str, *args, **kwargs) -> "Optimizer":
         if name not in cls._registry:
             raise ValueError(f"Unknown optimizer: '{name}'. Available: {list(cls._registry)}")
-        return cls._registry[name]()
+        return cls._registry[name](*args, **kwargs)
 
     @abstractmethod
-    def update(self, layer):
+    def update(
+        self,
+        weights: np.ndarray,
+        grad_weights: np.ndarray,
+        biases: np.ndarray,
+        grad_biases: np.ndarray,
+    ):
         """Updates the weights and biases of the given layer based on its stored gradients."""
         pass

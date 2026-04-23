@@ -6,7 +6,7 @@ import pandas as pd
 from mlp.activations import Identity, Sigmoid
 from mlp.layers.dense_layer import DenseLayer
 from mlp.model import SequentialNeuralNetwork
-from mlp.optimizers import GradientDescentOptimizer
+from mlp.optimizers import Optimizer
 from utils import parse_arguments
 
 
@@ -61,7 +61,7 @@ def main():
 
     model.compile(
         input_size=X.shape[1],
-        optimizer=GradientDescentOptimizer(args.learning_rate),
+        optimizer=Optimizer.from_str(args.optimization, args.learning_rate),
     )
 
     # Train the model

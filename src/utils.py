@@ -7,6 +7,9 @@ def parse_arguments():
     parser.add_argument(
         "--layer", nargs="+", type=int, default=[24, 24], help="Hidden layer sizes."
     )
+    parser.add_argument(
+        "--optimization", default="gradient_descent", help="Optimization algorithm to use."
+    )
     parser.add_argument("--epochs", type=int, default=70)
     parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--learning_rate", type=float, default=0.0314)
