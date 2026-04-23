@@ -51,8 +51,12 @@ class SequentialNeuralNetwork:
 
     def __repr__(self) -> str:
         def format_array(arr: np.ndarray) -> str:
-            return np.array2string(arr, threshold=np.inf, separator=", ") if arr is not None else "None"
-        
+            return (
+                np.array2string(arr, threshold=np.inf, separator=", ")
+                if arr is not None
+                else "None"
+            )
+
         layers_repr = "[\n" + ",\n".join(repr(layer) for layer in self.layers) + "\n]"
         return (
             "SequentialNeuralNetwork(\n"
@@ -65,7 +69,7 @@ class SequentialNeuralNetwork:
             f"  history={self.history!r}\n"
             ")"
         )
-    
+
     ################################################################################################
     # Alternative constructor
     ################################################################################################
@@ -105,7 +109,7 @@ class SequentialNeuralNetwork:
         model.classes = data["classes"]
 
         return model
-    
+
     ################################################################################################
     # Public API
     ################################################################################################
