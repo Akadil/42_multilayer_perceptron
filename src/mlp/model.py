@@ -22,16 +22,17 @@ class SequentialNeuralNetwork:
             activation. This is a common setup for classification tasks.
 
     Attributes:
-    - layers: A list of DenseLayer instances that make up the network.
-    - optimizer: An instance of an Optimizer used to update the weights during training.
-    - loss_function: the cross-entropy loss function with softmax activation.
+        layers: list of DenseLayer objects representing the architecture of the network.
+        optimizer: The optimization algorithm used for training (e.g. GradientDescentOptimizer).
+        loss_function: The loss function used to compute the training loss.
+        mean: The mean of the training data used for normalization.
+        std: The standard deviation of the training data used for normalization.
+        history: A dictionary to track training and validation loss and accuracy over epochs.
+        classes: The unique class labels in the training data
     ===============================================================================================
     """
 
     def __init__(self, layers: list[DenseLayer]):
-        if len(layers) == 0:
-            raise ValueError("The network must have at least one layer.")
-
         self.layers = layers
         self.optimizer: Optimizer | None = None  # set during compile()
         self.loss_function = CrossEntropyWithSoftmax()  # CrossEntropyLossWithSofmax
@@ -49,24 +50,25 @@ class SequentialNeuralNetwork:
         return f"SequentialNeuralNetwork(layers={self.layers}, optimizer={self.optimizer})"
 
     def __repr__(self) -> str:
+        def format_array(arr: np.ndarray) -> str:
+            return np.array2string(arr, threshold=np.inf, separator=", ") if arr is not None else "None"
+        
         layers_repr = "[\n" + ",\n".join(repr(layer) for layer in self.layers) + "\n]"
         return (
             "SequentialNeuralNetwork(\n"
             f"  layers={layers_repr},\n"
             f"  optimizer={self.optimizer!r},\n"
             f"  loss_function={self.loss_function!r},\n"
-            f"  mean={self._format_array(self.mean)},\n"
-            f"  std={self._format_array(self.std)},\n"
-            f"  classes={self._format_array(self.classes)},\n"
+            f"  mean={format_array(self.mean)},\n"
+            f"  std={format_array(self.std)},\n"
+            f"  classes={format_array(self.classes)},\n"
             f"  history={self.history!r}\n"
             ")"
         )
-
-    @staticmethod
-    def _format_array(value: np.ndarray | None) -> str:
-        if value is None:
-            return "None"
-        return np.array2string(value, threshold=np.inf, separator=", ")
+    
+    ################################################################################################
+    # Alternative constructor
+    ################################################################################################
 
     @classmethod
     def load(cls, path: str) -> "SequentialNeuralNetwork":
@@ -103,6 +105,10 @@ class SequentialNeuralNetwork:
         model.classes = data["classes"]
 
         return model
+    
+    ################################################################################################
+    # Public API
+    ################################################################################################
 
     def compile(self, input_size: int, optimizer: Optimizer | None = None):
         self.optimizer = optimizer if optimizer is not None else GradientDescentOptimizer(0.01)
@@ -192,6 +198,10 @@ class SequentialNeuralNetwork:
 
         np.save(path, data)
 
+    ################################################################################################
+    # Private helper methods
+    ################################################################################################
+
     def is_trained(self) -> bool:
         """Checks if the model has been trained"""
         return self.mean is not None and self.std is not None and self.classes is not None
@@ -276,17 +286,7 @@ class SequentialNeuralNetwork:
     def _create_batches(
         self, X: np.ndarray, y: np.ndarray, batch_size: int
     ) -> Generator[tuple[np.ndarray, np.ndarray]]:
-        """Creates batches of data for training.
-
-        Args:
-            X: shape (num_samples, input_size) The input data to batch.
-            y: shape (num_samples, output_size) The labels corresponding to X.
-            batch_size: int The number of samples per batch.
-        Returns:
-            Generator of tuples (X_batch, y_batch) where:
-                X_batch: shape (batch_size, input_size) A batch of input data.
-                y_batch: shape (batch_size, output_size) The labels corresponding to X_batch.
-        """
+        """Creates batches of data for training the model."""
         if batch_size <= 0:
             raise ValueError("batch_size must be a positive integer.")
 
@@ -305,14 +305,7 @@ class SequentialNeuralNetwork:
         return (input_data - self.mean) / std
 
     def _softmax(self, z: np.ndarray) -> np.ndarray:
-        """Applies the softmax activation function to the input.
-
-        Args:
-            z: shape (batch_size, num_classes) The input to the softmax function (logits).
-        Returns:
-            np.ndarray: shape (batch_size, num_classes) The output probabilities after applying
-            softmax.
-        """
+        """Applies the softmax activation function"""
         exp_z = np.exp(z - np.max(z, axis=1, keepdims=True))  # for numerical stability
 
         return exp_z / np.sum(exp_z, axis=1, keepdims=True)

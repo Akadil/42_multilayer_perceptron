@@ -30,7 +30,7 @@ def main():
     args = parser.parse_args()
 
     model = SequentialNeuralNetwork.load(args.model)
-    print(f"Loaded model: {model}")
+    # print(f"Loaded model: {model}")
 
     df = pd.read_csv(args.dataset)
     y_true = df.diagnosis.to_numpy()
